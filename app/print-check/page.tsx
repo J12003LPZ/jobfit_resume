@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { ResumeTemplate } from "@/lib/resume/renderResumeTemplate";
 import { fitToOnePage } from "@/lib/resume/fitToOnePage";
@@ -27,7 +27,7 @@ function longProfile(): Profile {
   };
 }
 
-export default function PrintCheckPage() {
+function PrintCheckInner() {
   const params = useSearchParams();
   const variant = params.get("variant");
   const resume = variant === "long" ? longProfile() : leonardoProfile;
@@ -43,4 +43,13 @@ export default function PrintCheckPage() {
   if (process.env.NODE_ENV === "production") return null;
 
   return <ResumeTemplate resume={resume} />;
+}
+
+export default function PrintCheckPage() {
+  if (process.env.NODE_ENV === "production") return null;
+  return (
+    <Suspense>
+      <PrintCheckInner />
+    </Suspense>
+  );
 }
