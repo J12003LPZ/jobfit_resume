@@ -6,7 +6,14 @@ Return ONLY valid JSON matching the provided schema. Do not explain.
 Do not invent skills that are not present or clearly implied by the description.
 Split items into: technologies (languages/frameworks/tools), hardSkills (technical abilities),
 softSkills (interpersonal), responsibilities (duties), preferredQualifications (nice-to-haves),
-and atsKeywords (the most important terms an ATS would scan for).`;
+and atsKeywords (the most important terms an ATS would scan for).
+
+atsKeywords MUST be short, scannable noun phrases (1-4 words), e.g. "React",
+"REST APIs", "unit testing", "Agile". NEVER put a full sentence or a verbatim
+responsibility line in atsKeywords — distill it to the underlying skill/term
+instead (e.g. "Collaborate with team members to design features" -> "collaboration",
+"feature design"). Keep responsibilities as the full duty sentences; keep
+atsKeywords terse.`;
 
 export function analyzeJobUser(jobDescription: string): string {
   return `Job description:\n\n${jobDescription}`;

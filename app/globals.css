@@ -35,10 +35,19 @@ html, body {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
-    padding: 0.5in 0.6in;
+    /* Match the on-screen template box so the print-time fit measurement is
+       accurate (see ExportButtons fit-to-one-page logic). */
+    width: 8.5in;
+    max-width: none;
+    margin: 0;
+    padding: 0.6in;
     background: #ffffff;
     color: #000000;
   }
-  @page { margin: 0; }
+  /* Keep links clickable but render them as plain resume text on paper. */
+  #resume-print a {
+    color: #000000;
+    text-decoration: none;
+  }
+  @page { size: letter; margin: 0; }
 }

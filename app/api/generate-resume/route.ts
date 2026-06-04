@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { callWorkersAI } from "@/lib/cloudflare/callWorkersAI";
 import { GENERATE_RESUME_SYSTEM, generateResumeUser } from "@/lib/cloudflare/prompts";
 import { generatedResumeJsonSchema } from "@/lib/cloudflare/jsonSchemas";
@@ -60,6 +61,12 @@ export async function POST(request: Request) {
     const validation = validateResume(resume, leonardoProfile);
     return NextResponse.json({ resume, validation });
   } catch (err) {
+    if (err instanceof ZodError) {
+      return NextResponse.json(
+        { error: "The model returned an unexpected resume shape. Please try again." },
+        { status: 502 },
+      );
+    }
     const message = err instanceof Error ? err.message : "Generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -8,22 +8,45 @@ function Heading({ children }: { children: string }) {
   );
 }
 
+// Bare URLs (e.g. "linkedin.com/in/...") need a protocol to be clickable in a
+// PDF viewer; emails need a mailto: scheme.
+function toHref(kind: "email" | "url", value: string): string {
+  if (kind === "email") return `mailto:${value}`;
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+}
+
 export function ResumeTemplate({ resume }: { resume: Profile }) {
   const c = resume.contact;
   const contactLine = [c.location, c.phone].filter(Boolean).join(" | ");
-  const links = [c.email, c.linkedin, c.portfolio].filter(Boolean).join(" | ");
+  const links: { text: string; href: string }[] = [
+    c.email ? { text: c.email, href: toHref("email", c.email) } : null,
+    c.linkedin ? { text: c.linkedin, href: toHref("url", c.linkedin) } : null,
+    c.portfolio ? { text: c.portfolio, href: toHref("url", c.portfolio) } : null,
+    c.github ? { text: c.github, href: toHref("url", c.github) } : null,
+  ].filter((l): l is { text: string; href: string } => l !== null);
 
   return (
     <div
       id="resume-print"
-      className="mx-auto max-w-[8.5in] bg-white p-8 font-serif text-[10.5pt] leading-snug text-black"
+      className="mx-auto w-[8.5in] max-w-full bg-white p-[0.6in] font-serif text-[10.5pt] leading-snug text-black"
       style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
     >
       <h1 className="text-center text-[20pt] font-bold tracking-wide">
         {resume.name.toUpperCase()}
       </h1>
       <p className="text-center text-[10pt]">{contactLine}</p>
-      {links && <p className="text-center text-[10pt] text-blue-800">{links}</p>}
+      {links.length > 0 && (
+        <p className="text-center text-[10pt]">
+          {links.map((l, i) => (
+            <span key={i}>
+              {i > 0 && <span className="text-black"> | </span>}
+              <a href={l.href} className="text-blue-800 underline">
+                {l.text}
+              </a>
+            </span>
+          ))}
+        </p>
+      )}
 
       <Heading>PROFESSIONAL SUMMARY</Heading>
       <p className="mt-1 text-justify">{resume.summary}</p>

@@ -21,4 +21,13 @@ describe("analyzeGaps", () => {
     expect(result.potentialScore).toBe(100);
     expect(result.matchScore).toBeLessThan(result.potentialScore);
   });
+
+  it("does not surface responsibility sentences as keyword chips", () => {
+    const sentence = "Collaborate with team members to design and implement new features";
+    const j: JobAnalysis = { ...job, responsibilities: [sentence], atsKeywords: ["GraphQL"] };
+    const result = analyzeGaps(j, []);
+    const chips = [...result.matchedKeywords, ...result.gapKeywords];
+    expect(chips).not.toContain(sentence);
+    expect(result.gapKeywords).toContain("GraphQL");
+  });
 });

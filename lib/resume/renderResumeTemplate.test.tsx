@@ -18,4 +18,26 @@ describe("ResumeTemplate", () => {
     render(<ResumeTemplate resume={{ ...leonardoProfile, projects: [] }} />);
     expect(screen.queryByText("PROJECTS")).toBeNull();
   });
+
+  it("renders contact links as clickable anchors with absolute hrefs", () => {
+    render(<ResumeTemplate resume={leonardoProfile} />);
+
+    const linkedin = screen.getByText("linkedin.com/in/leonardo-jeziel-lopez");
+    expect(linkedin.closest("a")).toHaveAttribute(
+      "href",
+      "https://linkedin.com/in/leonardo-jeziel-lopez",
+    );
+
+    const portfolio = screen.getByText("https://portfolio-leonardo-lopez.vercel.app/");
+    expect(portfolio.closest("a")).toHaveAttribute(
+      "href",
+      "https://portfolio-leonardo-lopez.vercel.app/",
+    );
+
+    const email = screen.getByText("leonardojeziellopez@gmail.com");
+    expect(email.closest("a")).toHaveAttribute(
+      "href",
+      "mailto:leonardojeziellopez@gmail.com",
+    );
+  });
 });

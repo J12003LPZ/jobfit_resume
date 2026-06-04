@@ -3,7 +3,7 @@ const stringArray = { type: "array", items: { type: "string" } };
 export const jobAnalysisJsonSchema = {
   type: "object",
   properties: {
-    jobTitle: { type: "string" },
+    jobTitle: { type: "string", minLength: 1 },
     companyName: { type: "string" },
     technologies: stringArray,
     hardSkills: stringArray,

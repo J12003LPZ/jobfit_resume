@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { callWorkersAI } from "@/lib/cloudflare/callWorkersAI";
 import { ANALYZE_JOB_SYSTEM, analyzeJobUser } from "@/lib/cloudflare/prompts";
 import { jobAnalysisJsonSchema } from "@/lib/cloudflare/jsonSchemas";
@@ -33,6 +34,12 @@ export async function POST(request: Request) {
     const gap = analyzeGaps(analysis, profileKeywords());
     return NextResponse.json({ analysis, gap });
   } catch (err) {
+    if (err instanceof ZodError) {
+      return NextResponse.json(
+        { error: "The model returned an unexpected response. Please try again." },
+        { status: 502 },
+      );
+    }
     const message = err instanceof Error ? err.message : "Analysis failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }

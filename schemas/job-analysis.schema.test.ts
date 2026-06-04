@@ -15,10 +15,19 @@ describe("jobAnalysisSchema", () => {
     expect(jobAnalysisSchema.parse(valid).jobTitle).toBe("Frontend Developer");
   });
 
-  it("defaults missing arrays to empty and rejects missing jobTitle", () => {
+  it("defaults missing arrays to empty", () => {
     const partial = { jobTitle: "Dev" };
     const parsed = jobAnalysisSchema.parse(partial);
     expect(parsed.technologies).toEqual([]);
-    expect(() => jobAnalysisSchema.parse({})).toThrow();
+  });
+
+  it("coerces empty, whitespace, or missing jobTitle to a fallback", () => {
+    expect(jobAnalysisSchema.parse({ jobTitle: "" }).jobTitle).toBe("Untitled Role");
+    expect(jobAnalysisSchema.parse({ jobTitle: "   " }).jobTitle).toBe("Untitled Role");
+    expect(jobAnalysisSchema.parse({}).jobTitle).toBe("Untitled Role");
+  });
+
+  it("trims a valid jobTitle", () => {
+    expect(jobAnalysisSchema.parse({ jobTitle: "  Dev  " }).jobTitle).toBe("Dev");
   });
 });

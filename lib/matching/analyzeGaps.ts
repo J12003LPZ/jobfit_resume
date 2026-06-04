@@ -3,13 +3,14 @@ import type { GapAnalysis } from "@/types/resume";
 import { compareKeywords } from "./compareKeywords";
 import { calculateMatchScore } from "./calculateMatchScore";
 
-// Flatten every job keyword across categories for the matched/gap chip lists.
+// Flatten job keywords for the matched/gap chip lists. Responsibilities are
+// full-sentence duties, not scannable keywords, so they're excluded here — the
+// granular terms a recruiter/ATS scans for live in atsKeywords.
 function allJobKeywords(job: JobAnalysis): string[] {
   return [
     ...job.technologies,
     ...job.hardSkills,
     ...job.softSkills,
-    ...job.responsibilities,
     ...job.atsKeywords,
   ];
 }
