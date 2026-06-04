@@ -1,65 +1,178 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useMemo, useState } from "react";
+import { Header } from "@/components/Header";
+import { Card, CardTitle } from "@/components/ui/Card";
+import { JobDescriptionInput } from "@/components/JobDescriptionInput";
+import { JobAnalysisPanel } from "@/components/JobAnalysisPanel";
+import { ResumePreview } from "@/components/ResumePreview";
+import { ResumeChecks } from "@/components/ResumeChecks";
+import { ExportButtons } from "@/components/ExportButtons";
+import { LoadingState } from "@/components/LoadingState";
+import { ErrorState } from "@/components/ErrorState";
+import { Button } from "@/components/ui/Button";
+import { normalizeKeyword } from "@/lib/matching/normalizeKeyword";
+import { calculateMatchScore } from "@/lib/matching/calculateMatchScore";
+import { profileKeywords } from "@/data/leonardo-profile";
+import type { JobAnalysis } from "@/types/job";
+import type { GapAnalysis, GapMode } from "@/types/resume";
+import type { Profile } from "@/types/profile";
+import type { ValidationResult } from "@/lib/resume/validateResume";
+
+export default function Page() {
+  const [jd, setJd] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [analysis, setAnalysis] = useState<JobAnalysis | null>(null);
+  const [gap, setGap] = useState<GapAnalysis | null>(null);
+  const [gapMode, setGapMode] = useState<GapMode>("verified_only");
+  const [accepted, setAccepted] = useState<string[]>([]);
+
+  const [resume, setResume] = useState<Profile | null>(null);
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
+
+  const liveScore = useMemo(() => {
+    if (!analysis) return 0;
+    return calculateMatchScore(analysis, [...profileKeywords(), ...accepted]);
+  }, [analysis, accepted]);
+
+  async function analyze() {
+    setAnalyzing(true);
+    setError(null);
+    setResume(null);
+    try {
+      const res = await fetch("/api/analyze-job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobDescription: jd }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Analysis failed");
+      setAnalysis(json.analysis);
+      setGap(json.gap);
+      setGapMode("verified_only");
+      setAccepted([]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Analysis failed");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  function acceptAll() {
+    if (!gap) return;
+    setGapMode("accept_all");
+    setAccepted([...gap.gapKeywords]);
+  }
+  function verifiedOnly() {
+    setGapMode("verified_only");
+    setAccepted([]);
+  }
+  function customize() {
+    setGapMode("custom");
+  }
+  function toggleKeyword(kw: string) {
+    const n = normalizeKeyword(kw);
+    setAccepted((prev) =>
+      prev.some((k) => normalizeKeyword(k) === n)
+        ? prev.filter((k) => normalizeKeyword(k) !== n)
+        : [...prev, kw]
+    );
+  }
+
+  async function generate() {
+    if (!analysis || !gap) return;
+    setGenerating(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/generate-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobAnalysis: analysis,
+          matchedKeywords: gap.matchedKeywords,
+          acceptedGapKeywords: accepted,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Generation failed");
+      setResume(json.resume);
+      setValidation(json.validation);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Generation failed");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function clearAll() {
+    setJd("");
+    setAnalysis(null);
+    setGap(null);
+    setResume(null);
+    setValidation(null);
+    setError(null);
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <main className="min-h-full">
+      <Header />
+      <div className="mx-auto max-w-[1440px] space-y-6 p-6">
+        <section className="grid gap-6 lg:grid-cols-2">
+          <Card className="space-y-4">
+            <CardTitle>1. Paste Job Description</CardTitle>
+            <JobDescriptionInput
+              value={jd}
+              onChange={setJd}
+              onAnalyze={analyze}
+              onClear={clearAll}
+              loading={analyzing}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          </Card>
+
+          <div className="space-y-4">
+            {analyzing && (
+              <Card><LoadingState label="Analyzing job description…" /></Card>
+            )}
+            {error && !analyzing && <ErrorState message={error} onRetry={analyze} />}
+            {analysis && gap && !analyzing && (
+              <JobAnalysisPanel
+                analysis={analysis}
+                gap={gap}
+                liveScore={liveScore}
+                gapMode={gapMode}
+                acceptedKeywords={accepted}
+                onAcceptAll={acceptAll}
+                onVerifiedOnly={verifiedOnly}
+                onCustomize={customize}
+                onToggleKeyword={toggleKeyword}
+              />
+            )}
+            {analysis && gap && !analyzing && (
+              <Button variant="primary" onClick={generate} disabled={generating}>
+                {generating ? "Generating…" : "Generate Resume"}
+              </Button>
+            )}
+          </div>
+        </section>
+
+        {generating && <Card><LoadingState label="Generating tailored resume…" /></Card>}
+
+        {resume && validation && (
+          <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <Card className="space-y-4">
+              <div className="flex items-center justify-between">
+                <CardTitle>Generated Resume</CardTitle>
+                <ExportButtons resume={resume} onRegenerate={generate} />
+              </div>
+              <ResumePreview resume={resume} />
+            </Card>
+            <ResumeChecks validation={validation} />
+          </section>
+        )}
+      </div>
+    </main>
   );
 }
