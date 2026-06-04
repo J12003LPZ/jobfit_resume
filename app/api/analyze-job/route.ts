@@ -5,23 +5,39 @@ import { ANALYZE_JOB_SYSTEM, analyzeJobUser } from "@/lib/cloudflare/prompts";
 import { jobAnalysisJsonSchema } from "@/lib/cloudflare/jsonSchemas";
 import { jobAnalysisSchema } from "@/schemas/job-analysis.schema";
 import { analyzeGaps } from "@/lib/matching/analyzeGaps";
+import { fetchJobText } from "@/lib/jobs/fetchJobText";
 import { profileKeywords } from "@/data/leonardo-profile";
 import type { JobAnalysis } from "@/types/job";
 
 export const maxDuration = 300;
 
 export async function POST(request: Request) {
-  let body: { jobDescription?: unknown };
+  let body: { jobDescription?: unknown; jobUrl?: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const jobDescription =
+  let jobDescription =
     typeof body.jobDescription === "string" ? body.jobDescription.trim() : "";
+  const jobUrl = typeof body.jobUrl === "string" ? body.jobUrl.trim() : "";
+
+  if (!jobDescription && jobUrl) {
+    try {
+      jobDescription = await fetchJobText(jobUrl);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Could not load that URL.";
+      return NextResponse.json({ error: message }, { status: 422 });
+    }
+  }
+
   if (!jobDescription) {
-    return NextResponse.json({ error: "Missing jobDescription" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing jobDescription or jobUrl" },
+      { status: 400 },
+    );
   }
 
   try {
