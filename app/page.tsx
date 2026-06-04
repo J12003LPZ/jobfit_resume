@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Header } from "@/components/Header";
 import { Card, CardTitle } from "@/components/ui/Card";
-import { JobDescriptionInput } from "@/components/JobDescriptionInput";
+import { JobDescriptionInput, type JobInputMode } from "@/components/JobDescriptionInput";
 import { JobAnalysisPanel } from "@/components/JobAnalysisPanel";
 import { ResumePreview } from "@/components/ResumePreview";
 import { ResumeChecks } from "@/components/ResumeChecks";
@@ -21,6 +21,8 @@ import type { ValidationResult } from "@/lib/resume/validateResume";
 
 export default function Page() {
   const [jd, setJd] = useState("");
+  const [jobUrl, setJobUrl] = useState("");
+  const [inputMode, setInputMode] = useState<JobInputMode>("text");
   const [analyzing, setAnalyzing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,9 @@ export default function Page() {
       const res = await fetch("/api/analyze-job", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobDescription: jd }),
+        body: JSON.stringify(
+          inputMode === "url" ? { jobUrl } : { jobDescription: jd },
+        ),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Analysis failed");
@@ -109,6 +113,7 @@ export default function Page() {
 
   function clearAll() {
     setJd("");
+    setJobUrl("");
     setAnalysis(null);
     setGap(null);
     setResume(null);
@@ -124,8 +129,12 @@ export default function Page() {
           <Card className="space-y-4">
             <CardTitle>1. Paste Job Description</CardTitle>
             <JobDescriptionInput
+              mode={inputMode}
               value={jd}
+              url={jobUrl}
               onChange={setJd}
+              onUrlChange={setJobUrl}
+              onModeChange={setInputMode}
               onAnalyze={analyze}
               onClear={clearAll}
               loading={analyzing}
