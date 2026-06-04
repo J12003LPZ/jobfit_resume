@@ -17,10 +17,13 @@ export function extractTextFromHtml(html: string): string {
   const withoutTags = withoutBlocks.replace(/<[^>]+>/g, " ");
 
   const decoded = withoutTags
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#(\d+);/g, (_, n) => {
+      const cp = Number(n);
+      return cp > 31 && cp < 1114112 ? String.fromCodePoint(cp) : " ";
+    })
     .replace(
       /&[a-z]+;|&#39;/gi,
-      (m) => ENTITIES[m.toLowerCase()] ?? ENTITIES[m] ?? m,
+      (m) => ENTITIES[m.toLowerCase()] ?? m,
     );
 
   return decoded.replace(/\s+/g, " ").trim();

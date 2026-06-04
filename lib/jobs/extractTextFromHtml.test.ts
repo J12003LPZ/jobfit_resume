@@ -22,4 +22,9 @@ describe("extractTextFromHtml", () => {
   it("collapses whitespace across newlines", () => {
     expect(extractTextFromHtml("<p>a</p>\n\n   <p>b</p>")).toBe("a b");
   });
+
+  it("decodes numeric character references", () => {
+    expect(extractTextFromHtml("<p>caf&#233;</p>")).toBe("café");
+    expect(extractTextFromHtml("<p>&#0;null&#31;control</p>")).toBe("null control");
+  });
 });
