@@ -17,7 +17,7 @@ const baseProps = {
 describe("JobDescriptionInput", () => {
   it("shows the textarea in text mode", () => {
     render(<JobDescriptionInput {...baseProps} />);
-    expect(screen.getByPlaceholderText(/paste the job description/i)).toBeTruthy();
+    expect(screen.getByPlaceholderText(/paste the .*job description/i)).toBeTruthy();
   });
 
   it("shows a URL field in url mode", () => {
@@ -28,7 +28,7 @@ describe("JobDescriptionInput", () => {
   it("calls onModeChange when the URL tab is clicked", () => {
     const onModeChange = vi.fn();
     render(<JobDescriptionInput {...baseProps} onModeChange={onModeChange} />);
-    fireEvent.click(screen.getByRole("button", { name: /paste url/i }));
+    fireEvent.click(screen.getByRole("button", { name: /paste a url/i }));
     expect(onModeChange).toHaveBeenCalledWith("url");
   });
 

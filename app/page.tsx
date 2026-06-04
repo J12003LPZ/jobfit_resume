@@ -10,6 +10,7 @@ import { ResumeChecks } from "@/components/ResumeChecks";
 import { ExportButtons } from "@/components/ExportButtons";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
+import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { normalizeKeyword } from "@/lib/matching/normalizeKeyword";
 import { calculateMatchScore } from "@/lib/matching/calculateMatchScore";
@@ -124,10 +125,30 @@ export default function Page() {
   return (
     <main className="min-h-full">
       <Header />
-      <div className="mx-auto max-w-[1440px] space-y-6 p-6">
+      <div className="mx-auto max-w-[1440px] space-y-8 px-6 py-10">
+        <section className="animate-rise max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-primary)]">
+            Beat the keyword filter
+          </p>
+          <h2 className="mt-3 font-display text-4xl font-semibold leading-[1.08] tracking-[-0.02em] text-[var(--color-on-surface)] sm:text-5xl">
+            Tailor your résumé to the{" "}
+            <span className="italic text-[var(--color-primary)]">job</span>, not
+            the other way around.
+          </h2>
+          <p className="mt-4 text-base leading-relaxed text-[var(--color-on-surface-variant)]">
+            Paste a posting, accept the keywords you genuinely match, and
+            generate an ATS-friendly, single-page résumé in seconds.
+          </p>
+        </section>
+
         <section className="grid gap-6 lg:grid-cols-2">
-          <Card className="space-y-4">
-            <CardTitle>1. Paste Job Description</CardTitle>
+          <Card className="animate-rise space-y-5">
+            <div className="flex items-baseline gap-3">
+              <span className="font-display text-sm font-semibold text-[var(--color-primary)]">
+                01
+              </span>
+              <CardTitle>Add the job posting</CardTitle>
+            </div>
             <JobDescriptionInput
               mode={inputMode}
               value={jd}
@@ -142,6 +163,7 @@ export default function Page() {
           </Card>
 
           <div className="space-y-4">
+            {!analyzing && !error && !analysis && <EmptyState />}
             {analyzing && (
               <Card><LoadingState label="Analyzing job description…" /></Card>
             )}

@@ -1,35 +1,106 @@
 @import "tailwindcss";
 
 @theme {
-  --color-surface: #faf8ff;
-  --color-canvas: #f9fafb;
-  --color-card: #ffffff;
-  --color-on-surface: #131b2e;
-  --color-on-surface-variant: #434655;
-  --color-primary: #2563eb;
-  --color-primary-strong: #004ac6;
-  --color-on-primary: #ffffff;
-  --color-outline: #e2e8f0;
-  --color-amber: #b45309;
-  --color-amber-bg: #fffbeb;
-  --color-emerald: #047857;
-  --color-emerald-bg: #ecfdf5;
-  --color-rose: #be123c;
-  --color-rose-bg: #fff1f2;
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --radius-card: 0.75rem;
-  --radius-md: 0.5rem;
+  /* Warm "ink on paper" editorial palette */
+  --color-surface: #efe9dc;
+  --color-canvas: #f5f0e6;
+  --color-card: #fffdf8;
+  --color-on-surface: #211d17;
+  --color-on-surface-variant: #6d6354;
+  --color-primary: #b8492a;
+  --color-primary-strong: #93371f;
+  --color-on-primary: #fdf8f1;
+  --color-outline: #e2d9c7;
+  --color-outline-strong: #d2c6ad;
+  --color-amber: #9a6212;
+  --color-amber-bg: #faf2dd;
+  --color-emerald: #2f6d4f;
+  --color-emerald-bg: #e7f2e9;
+  --color-rose: #a8324a;
+  --color-rose-bg: #fbe9ea;
+
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), Georgia, "Times New Roman", serif;
+
+  --radius-card: 1rem;
+  --radius-md: 0.625rem;
+
+  --shadow-card: 0 1px 2px rgba(33, 29, 23, 0.04),
+    0 12px 32px -16px rgba(33, 29, 23, 0.18);
+  --shadow-lift: 0 2px 4px rgba(33, 29, 23, 0.05),
+    0 24px 48px -24px rgba(33, 29, 23, 0.22);
 }
 
-html, body {
+html,
+body {
   background: var(--color-canvas);
   color: var(--color-on-surface);
   font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv01";
+}
+
+/* Atmospheric layered canvas: warm light from top, faint clay glow */
+body {
+  position: relative;
+  background-image:
+    radial-gradient(
+      1100px 620px at 78% -8%,
+      rgba(184, 73, 42, 0.07),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 700px at 8% 4%,
+      rgba(154, 98, 18, 0.06),
+      transparent 55%
+    ),
+    linear-gradient(180deg, #f7f2e9 0%, var(--color-canvas) 38%);
+  background-attachment: fixed;
+}
+
+/* Fine paper grain overlay */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+::selection {
+  background: rgba(184, 73, 42, 0.18);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* ---- Print: isolate the resume node for PDF export ---- */
 @media print {
   body * { visibility: hidden; }
+  body::before { display: none; }
   #resume-print, #resume-print * { visibility: visible; }
   #resume-print {
     position: absolute;
