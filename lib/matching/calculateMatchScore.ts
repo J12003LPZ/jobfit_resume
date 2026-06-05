@@ -1,35 +1,23 @@
 import type { JobAnalysis } from "@/types/job";
 import { normalizeKeyword } from "./normalizeKeyword";
+import { jobKeywordList } from "./jobKeywords";
 
-const WEIGHTS = {
-  technologies: 40,
-  hardSkills: 30,
-  responsibilities: 20,
-  softSkills: 10,
-} as const;
-
-function categoryRatio(items: string[], profileSet: Set<string>): number | null {
-  const normed = items.map(normalizeKeyword).filter(Boolean);
-  if (normed.length === 0) return null; // empty category contributes nothing
-  const matched = normed.filter((k) => profileSet.has(k)).length;
-  return matched / normed.length;
-}
-
+// Equal-weight keyword coverage: the fraction of the job's unique scannable
+// keywords that appear in the candidate's keyword set. Scored over the SAME
+// universe the gap chips are drawn from (jobKeywordList), so accepting every
+// surfaced gap keyword always yields a full 100% match.
 export function calculateMatchScore(
   job: JobAnalysis,
   profileKeywords: string[]
 ): number {
-  const profileSet = new Set(profileKeywords.map(normalizeKeyword).filter(Boolean));
+  const universe = Array.from(
+    new Set(jobKeywordList(job).map(normalizeKeyword).filter(Boolean))
+  );
+  if (universe.length === 0) return 0;
 
-  let weightedSum = 0;
-  let totalWeight = 0;
-  for (const [cat, weight] of Object.entries(WEIGHTS) as [keyof typeof WEIGHTS, number][]) {
-    const ratio = categoryRatio(job[cat], profileSet);
-    if (ratio === null) continue;
-    weightedSum += ratio * weight;
-    totalWeight += weight;
-  }
-  if (totalWeight === 0) return 0;
-  // Re-base to 0-100 across only the present categories.
-  return Math.round((weightedSum / totalWeight) * 100);
+  const profileSet = new Set(
+    profileKeywords.map(normalizeKeyword).filter(Boolean)
+  );
+  const matched = universe.filter((k) => profileSet.has(k)).length;
+  return Math.round((matched / universe.length) * 100);
 }
