@@ -2,27 +2,18 @@ import type { JobAnalysis } from "@/types/job";
 import type { GapAnalysis } from "@/types/resume";
 import { compareKeywords } from "./compareKeywords";
 import { calculateMatchScore } from "./calculateMatchScore";
-
-// Flatten job keywords for the matched/gap chip lists. Responsibilities are
-// full-sentence duties, not scannable keywords, so they're excluded here — the
-// granular terms a recruiter/ATS scans for live in atsKeywords.
-function allJobKeywords(job: JobAnalysis): string[] {
-  return [
-    ...job.technologies,
-    ...job.hardSkills,
-    ...job.softSkills,
-    ...job.atsKeywords,
-  ];
-}
+import { jobKeywordList } from "./jobKeywords";
 
 export function analyzeGaps(
   job: JobAnalysis,
   profileKeywords: string[]
 ): GapAnalysis {
-  const { matched, gap } = compareKeywords(allJobKeywords(job), profileKeywords);
+  const { matched, gap } = compareKeywords(jobKeywordList(job), profileKeywords);
 
   const matchScore = calculateMatchScore(job, profileKeywords);
-  // Potential: pretend the profile also has every gap keyword.
+  // Potential: pretend the profile also has every gap keyword. Because the gaps
+  // are exactly the un-matched members of jobKeywordList — the same universe the
+  // score is computed over — this resolves to a full 100% match.
   const potentialScore = calculateMatchScore(job, [...profileKeywords, ...gap]);
 
   return {
