@@ -62,3 +62,51 @@ export function generateResumeUser(args: {
     2
   );
 }
+
+export const COVER_LETTER_SYSTEM = `You are an ATS cover-letter assistant.
+Return ONLY valid JSON matching the provided schema. No markdown, no commentary.
+
+The candidate's facts (name, employers, titles, dates, education, metrics) are a
+FIXED master record. You MUST NOT invent or alter any of them. Only claim
+experience and abilities truthfully supported by the candidate's real profile
+(their experience, skills, and accepted gap keywords).
+
+Write a concise, professional cover letter in FIRST PERSON ("I"), 250 words or
+fewer, as four JSON fields:
+1. greeting — a salutation. Use "Dear Hiring Manager," unless a better generic
+   salutation fits. Never invent a person's name.
+2. opening — one short paragraph naming the target role and why the candidate is
+   a strong fit, leading with their strongest job-relevant qualification.
+3. body — 1 to 3 short paragraphs. EXPLICITLY connect the candidate's REAL
+   experience and projects to the job's responsibilities and required skills.
+   Weave the job's technologies and atsKeywords in naturally where they are
+   genuinely supported by the candidate's background.
+4. closing — one short paragraph with a courteous call to action. Do NOT sign
+   off with a name; the application appends the signature.
+
+Accepted gap keywords may be mentioned as genuine interest or current learning,
+but NEVER as a past achievement or as something already delivered.
+
+Avoid clichés: "team player", "results-driven", "go-getter", "synergy",
+"detail-oriented", "self-starter", "rockstar", "ninja", "guru", "hard worker",
+"think outside the box".`;
+
+export function coverLetterUser(args: {
+  profile: Profile;
+  jobAnalysis: JobAnalysis;
+  matchedKeywords: string[];
+  acceptedGapKeywords: string[];
+}): string {
+  return JSON.stringify(
+    {
+      candidateProfile: args.profile,
+      jobAnalysis: args.jobAnalysis,
+      matchedKeywords: args.matchedKeywords,
+      acceptedGapKeywords: args.acceptedGapKeywords,
+      instruction:
+        "Write greeting, opening, body, and closing for a cover letter that maps the candidate's real experience to this job's responsibilities and naturally includes the job's keywords the candidate genuinely has. Do not invent facts.",
+    },
+    null,
+    2,
+  );
+}
