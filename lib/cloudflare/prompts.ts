@@ -20,17 +20,28 @@ export function analyzeJobUser(jobDescription: string): string {
 }
 
 export const GENERATE_RESUME_SYSTEM = `You are an ATS resume-tailoring assistant.
-Generate an ATS-friendly resume as JSON matching the provided schema.
+Return ONLY valid JSON matching the provided schema. No markdown, no commentary.
 
-HARD RULES:
-- Do NOT create fake companies, job titles, degrees, schools, or dates.
-- Copy companies, roles, dates, schools, degrees, gpa, and honors VERBATIM from the candidate profile.
-- You may rewrite the summary and experience/project bullets to align with the job, but only using
-  facts supported by the profile.
-- "Accepted gap keywords" may be added to the skills array and woven into the summary phrasing ONLY.
-  Never present an accepted gap keyword as a concrete past achievement in an experience bullet.
-- Avoid clichés: "team player", "results-driven", "go-getter", "synergy", "rockstar", etc.
-- Return ONLY valid JSON. No markdown, no commentary.`;
+The candidate's PROFESSIONAL EXPERIENCE and EDUCATION are FIXED master records.
+You MUST NOT invent, reword, reorder, expand, shorten, or otherwise edit them. The
+application copies experience and education verbatim from the profile, so anything
+you output for those sections is ignored.
+
+YOUR JOB has exactly two parts:
+1. PROFESSIONAL SUMMARY — Write a sharp 3-4 sentence summary tailored to align as
+   closely as possible with the target job. Use the job's own terminology and mirror
+   its title, required technologies, responsibilities, and ATS keywords — but ONLY
+   claim experience and abilities that are truthfully supported by the candidate's
+   real profile (their experience, skills, and accepted gap keywords). Lead with the
+   candidate's strongest job-relevant qualifications. Write in third person with no
+   "I". Avoid clichés: "team player", "results-driven", "go-getter", "synergy",
+   "detail-oriented", "self-starter", "rockstar", "ninja", "guru".
+2. SKILLS — Curate and order the skills list to surface the keywords this job scans
+   for that the candidate genuinely has. You may append the "accepted gap keywords".
+   Never duplicate a skill.
+
+Accepted gap keywords may appear in the summary phrasing and the skills list, but must
+NEVER be presented as a concrete past achievement.`;
 
 export function generateResumeUser(args: {
   profile: Profile;
@@ -45,7 +56,7 @@ export function generateResumeUser(args: {
       matchedKeywords: args.matchedKeywords,
       acceptedGapKeywords: args.acceptedGapKeywords,
       instruction:
-        "Tailor the summary and bullets to the jobAnalysis. Add acceptedGapKeywords to skills only.",
+        "Write a PROFESSIONAL SUMMARY that matches the jobAnalysis as closely as the candidate's real background truthfully allows, and curate the skills list. The experience and education in candidateProfile are fixed — do not modify them.",
     },
     null,
     2

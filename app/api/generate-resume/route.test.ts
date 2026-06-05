@@ -37,6 +37,30 @@ describe("POST /api/generate-resume", () => {
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.resume.name).toBe("Leonardo Lopez");
+    expect(json.resume.summary).toBe("Tailored summary.");
     expect(Array.isArray(json.validation.checks)).toBe(true);
+  });
+
+  it("keeps experience and education verbatim, ignoring any AI edits", async () => {
+    // A model that tries to rewrite experience/education must have no effect.
+    (callWorkersAI as any).mockResolvedValue({
+      ...leonardoProfile,
+      summary: "Tailored summary.",
+      experience: [
+        {
+          company: "Fabricated Corp",
+          role: "Senior Staff Engineer",
+          dates: "2010 – Present",
+          bullets: ["Invented a bullet that is not in the profile."],
+        },
+      ],
+      education: [
+        { school: "Fake University", degree: "PhD in Everything" },
+      ],
+    });
+    const res = await POST(req(validBody));
+    const json = await res.json();
+    expect(json.resume.experience).toEqual(leonardoProfile.experience);
+    expect(json.resume.education).toEqual(leonardoProfile.education);
   });
 });

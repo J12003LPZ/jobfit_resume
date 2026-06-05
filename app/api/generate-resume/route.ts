@@ -42,20 +42,18 @@ export async function POST(request: Request) {
 
     const parsed = generatedResumeSchema.parse(raw) as Profile;
 
-    // Enforce non-negotiable facts from master profile (defense in depth).
+    // The AI only tailors the professional summary and curates the skills list.
+    // Experience, education, projects, and all identity/contact facts are copied
+    // verbatim from the master profile — the model never edits them.
     const resume: Profile = {
-      ...parsed,
       name: leonardoProfile.name,
+      title: leonardoProfile.title,
       contact: leonardoProfile.contact,
-      experience: parsed.experience.map((e, i) => ({
-        ...e,
-        company: leonardoProfile.experience[i]?.company ?? e.company,
-        role: leonardoProfile.experience[i]?.role ?? e.role,
-        dates: leonardoProfile.experience[i]?.dates ?? e.dates,
-        location: leonardoProfile.experience[i]?.location ?? e.location,
-      })),
-      education: leonardoProfile.education,
+      summary: parsed.summary,
       skills: removeDuplicates(parsed.skills),
+      experience: leonardoProfile.experience,
+      projects: leonardoProfile.projects,
+      education: leonardoProfile.education,
     };
 
     const validation = validateResume(resume, leonardoProfile);
