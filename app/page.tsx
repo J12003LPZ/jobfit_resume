@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Header";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { JobDescriptionInput, type JobInputMode } from "@/components/JobDescriptionInput";
@@ -40,9 +40,58 @@ export default function Page() {
 
   const [resume, setResume] = useState<Profile | null>(null);
   const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [editingResume, setEditingResume] = useState(false);
   const [coverLetter, setCoverLetter] = useState<CoverLetter | null>(null);
   const [coverage, setCoverage] = useState<CoverLetterCoverage | null>(null);
   const [generatingCover, setGeneratingCover] = useState(false);
+  const [editingLetter, setEditingLetter] = useState(false);
+
+  // Hydrate the last (possibly hand-edited) resume + cover letter from
+  // localStorage on mount so manual edits survive a refresh.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("jobfit:resume");
+      if (raw) {
+        const saved = JSON.parse(raw) as { resume: Profile; validation: ValidationResult };
+        if (saved?.resume) {
+          setResume(saved.resume);
+          setValidation(saved.validation ?? null);
+        }
+      }
+      const rawLetter = localStorage.getItem("jobfit:coverLetter");
+      if (rawLetter) {
+        const saved = JSON.parse(rawLetter) as { coverLetter: CoverLetter; coverage: CoverLetterCoverage };
+        if (saved?.coverLetter) {
+          setCoverLetter(saved.coverLetter);
+          setCoverage(saved.coverage ?? null);
+        }
+      }
+    } catch {
+      /* ignore corrupt/unavailable storage */
+    }
+  }, []);
+
+  // Persist the resume (including manual edits) whenever it changes.
+  useEffect(() => {
+    try {
+      if (resume) {
+        localStorage.setItem("jobfit:resume", JSON.stringify({ resume, validation }));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [resume, validation]);
+
+  // Persist the cover letter (including manual edits) whenever it changes.
+  useEffect(() => {
+    try {
+      if (coverLetter) {
+        localStorage.setItem("jobfit:coverLetter", JSON.stringify({ coverLetter, coverage }));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [coverLetter, coverage]);
 
   const liveScore = useMemo(() => {
     if (!analysis) return 0;
@@ -154,9 +203,17 @@ export default function Page() {
     setGap(null);
     setResume(null);
     setValidation(null);
+    setEditingResume(false);
     setCoverLetter(null);
     setCoverage(null);
+    setEditingLetter(false);
     setError(null);
+    try {
+      localStorage.removeItem("jobfit:resume");
+      localStorage.removeItem("jobfit:coverLetter");
+    } catch {
+      /* ignore */
+    }
   }
 
   return (
@@ -238,9 +295,18 @@ export default function Page() {
             <Card className="space-y-4">
               <div className="flex items-center justify-between">
                 <CardTitle>Generated Resume</CardTitle>
-                <ExportButtons resume={resume} onRegenerate={generate} />
+                <ExportButtons
+                  resume={resume}
+                  onRegenerate={generate}
+                  editing={editingResume}
+                  onToggleEdit={() => setEditingResume((v) => !v)}
+                />
               </div>
-              <ResumePreview resume={resume} />
+              <ResumePreview
+                resume={resume}
+                editable={editingResume}
+                onChange={setResume}
+              />
             </Card>
             <ResumeChecks validation={validation} />
           </section>
@@ -253,9 +319,18 @@ export default function Page() {
             <Card className="space-y-4">
               <div className="flex items-center justify-between">
                 <CardTitle>Cover Letter</CardTitle>
-                <CoverLetterExportButtons letter={coverLetter} onRegenerate={generateCoverLetter} />
+                <CoverLetterExportButtons
+                  letter={coverLetter}
+                  onRegenerate={generateCoverLetter}
+                  editing={editingLetter}
+                  onToggleEdit={() => setEditingLetter((v) => !v)}
+                />
               </div>
-              <CoverLetterPreview letter={coverLetter} />
+              <CoverLetterPreview
+                letter={coverLetter}
+                editable={editingLetter}
+                onChange={setCoverLetter}
+              />
             </Card>
             <Card className="space-y-4">
               <CardTitle>Keyword Match</CardTitle>

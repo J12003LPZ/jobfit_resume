@@ -7,9 +7,13 @@ import type { CoverLetter } from "@/types/coverLetter";
 export function CoverLetterExportButtons({
   letter,
   onRegenerate,
+  editing = false,
+  onToggleEdit,
 }: {
   letter: CoverLetter;
   onRegenerate: () => void;
+  editing?: boolean;
+  onToggleEdit?: () => void;
 }) {
   async function copyText() {
     await navigator.clipboard.writeText(coverLetterToPlainText(letter));
@@ -22,6 +26,11 @@ export function CoverLetterExportButtons({
   return (
     <div className="flex flex-wrap gap-2">
       <Button variant="secondary" onClick={copyText}>Copy Text</Button>
+      {onToggleEdit && (
+        <Button variant="secondary" onClick={onToggleEdit}>
+          {editing ? "Done" : "Edit"}
+        </Button>
+      )}
       <Button variant="secondary" onClick={downloadPdf}>Download PDF</Button>
       <Button variant="ghost" onClick={onRegenerate}>Regenerate</Button>
     </div>

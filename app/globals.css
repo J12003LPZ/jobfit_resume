@@ -97,15 +97,15 @@ body > * {
   animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* ---- Print: isolate the resume node for PDF export ---- */
+/* ---- Print: isolate the resume node for PDF export ----
+   `visibility: hidden` keeps layout boxes, so the tall app still paginated
+   into blank trailing pages. Instead, ExportButtons hoists #resume-print to be
+   a direct child of <body> and tags <body class="printing-resume">; we then
+   `display: none` every other body child so nothing else occupies flow. */
 @media print {
-  body * { visibility: hidden; }
-  body::before { display: none; }
-  #resume-print, #resume-print * { visibility: visible; }
-  #resume-print {
-    position: absolute;
-    left: 0;
-    top: 0;
+  body.printing-resume::before { display: none; }
+  body.printing-resume > *:not(#resume-print) { display: none !important; }
+  body.printing-resume > #resume-print {
     /* Match the on-screen template box so the print-time fit measurement is
        accurate (see ExportButtons fit-to-one-page logic). */
     width: 8.5in;
@@ -116,7 +116,7 @@ body > * {
     color: #000000;
   }
   /* Keep links clickable but render them as plain resume text on paper. */
-  #resume-print a {
+  body.printing-resume #resume-print a {
     color: #000000;
     text-decoration: none;
   }

@@ -34,7 +34,13 @@ function PrintCheckInner() {
 
   useEffect(() => {
     const node = document.getElementById("resume-print");
-    if (node) fitToOnePage(node);
+    if (node) {
+      fitToOnePage(node);
+      // Mirror ExportButtons: hoist to <body> and tag so the scoped print CSS
+      // applies and no other content paginates into blank pages.
+      document.body.appendChild(node);
+      document.body.classList.add("printing-resume");
+    }
     // Signal to the headless PDF checker that layout + fit are applied.
     document.body.setAttribute("data-print-ready", "1");
   }, [variant]);

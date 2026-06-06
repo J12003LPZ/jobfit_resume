@@ -6,7 +6,9 @@ import { leonardoProfile } from "@/data/leonardo-profile";
 describe("ResumeTemplate", () => {
   it("renders name, all ATS section headings, and the print wrapper id", () => {
     const { container } = render(<ResumeTemplate resume={leonardoProfile} />);
-    expect(screen.getByText("LEONARDO LOPEZ")).toBeInTheDocument();
+    // Name is uppercased via CSS (text-transform) so the raw value stays in the
+    // DOM/data; the heading carries the `uppercase` class for display.
+    expect(screen.getByText(leonardoProfile.name)).toBeInTheDocument();
     expect(screen.getByText("PROFESSIONAL SUMMARY")).toBeInTheDocument();
     expect(screen.getByText("TECHNICAL SKILLS")).toBeInTheDocument();
     expect(screen.getByText("PROFESSIONAL EXPERIENCE")).toBeInTheDocument();
