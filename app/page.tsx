@@ -19,6 +19,11 @@ import type { JobAnalysis } from "@/types/job";
 import type { GapAnalysis, GapMode } from "@/types/resume";
 import type { Profile } from "@/types/profile";
 import type { ValidationResult } from "@/lib/resume/validateResume";
+import { CoverLetterPreview } from "@/components/CoverLetterPreview";
+import { CoverLetterExportButtons } from "@/components/CoverLetterExportButtons";
+import { CoverLetterCoveragePanel } from "@/components/CoverLetterCoveragePanel";
+import type { CoverLetter } from "@/types/coverLetter";
+import type { CoverLetterCoverage } from "@/lib/matching/coverLetterCoverage";
 
 export default function Page() {
   const [jd, setJd] = useState("");
@@ -35,6 +40,9 @@ export default function Page() {
 
   const [resume, setResume] = useState<Profile | null>(null);
   const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [coverLetter, setCoverLetter] = useState<CoverLetter | null>(null);
+  const [coverage, setCoverage] = useState<CoverLetterCoverage | null>(null);
+  const [generatingCover, setGeneratingCover] = useState(false);
 
   const liveScore = useMemo(() => {
     if (!analysis) return 0;
@@ -45,6 +53,8 @@ export default function Page() {
     setAnalyzing(true);
     setError(null);
     setResume(null);
+    setCoverLetter(null);
+    setCoverage(null);
     try {
       const res = await fetch("/api/analyze-job", {
         method: "POST",
@@ -112,6 +122,31 @@ export default function Page() {
     }
   }
 
+  async function generateCoverLetter() {
+    if (!analysis || !gap) return;
+    setGeneratingCover(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/generate-cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobAnalysis: analysis,
+          matchedKeywords: gap.matchedKeywords,
+          acceptedGapKeywords: accepted,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Cover letter generation failed");
+      setCoverLetter(json.coverLetter);
+      setCoverage(json.coverage);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Cover letter generation failed");
+    } finally {
+      setGeneratingCover(false);
+    }
+  }
+
   function clearAll() {
     setJd("");
     setJobUrl("");
@@ -119,6 +154,8 @@ export default function Page() {
     setGap(null);
     setResume(null);
     setValidation(null);
+    setCoverLetter(null);
+    setCoverage(null);
     setError(null);
   }
 
@@ -182,9 +219,14 @@ export default function Page() {
               />
             )}
             {analysis && gap && !analyzing && (
-              <Button variant="primary" onClick={generate} disabled={generating}>
-                {generating ? "Generating…" : "Generate Resume"}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="primary" onClick={generate} disabled={generating}>
+                  {generating ? "Generating…" : "Generate Resume"}
+                </Button>
+                <Button variant="secondary" onClick={generateCoverLetter} disabled={generatingCover}>
+                  {generatingCover ? "Generating…" : "Generate Cover Letter"}
+                </Button>
+              </div>
             )}
           </div>
         </section>
@@ -201,6 +243,24 @@ export default function Page() {
               <ResumePreview resume={resume} />
             </Card>
             <ResumeChecks validation={validation} />
+          </section>
+        )}
+
+        {generatingCover && <Card><LoadingState label="Generating cover letter…" /></Card>}
+
+        {coverLetter && coverage && (
+          <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
+            <Card className="space-y-4">
+              <div className="flex items-center justify-between">
+                <CardTitle>Cover Letter</CardTitle>
+                <CoverLetterExportButtons letter={coverLetter} onRegenerate={generateCoverLetter} />
+              </div>
+              <CoverLetterPreview letter={coverLetter} />
+            </Card>
+            <Card className="space-y-4">
+              <CardTitle>Keyword Match</CardTitle>
+              <CoverLetterCoveragePanel coverage={coverage} />
+            </Card>
           </section>
         )}
       </div>

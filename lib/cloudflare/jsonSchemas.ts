@@ -58,3 +58,14 @@ export const generatedResumeJsonSchema = {
   },
   required: ["name", "title", "contact", "summary", "skills", "experience", "education"],
 };
+
+export const coverLetterContentJsonSchema = {
+  type: "object",
+  properties: {
+    greeting: { type: "string" },
+    opening: { type: "string" },
+    body: stringArray,
+    closing: { type: "string" },
+  },
+  required: ["opening", "body", "closing"],
+};
