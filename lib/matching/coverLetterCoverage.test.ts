@@ -72,3 +72,72 @@ describe("coverLetterCoverage", () => {
     expect(coverLetterCoverage(empty, letter({ opening: "React" })).coverageScore).toBe(0);
   });
 });
+
+describe("coverLetterCoverage — generous matching", () => {
+  function job(overrides: Partial<JobAnalysis> = {}): JobAnalysis {
+    return {
+      jobTitle: "Engineer",
+      technologies: [],
+      hardSkills: [],
+      softSkills: [],
+      responsibilities: [],
+      preferredQualifications: [],
+      atsKeywords: [],
+      ...overrides,
+    };
+  }
+  function withProse(opening: string): CoverLetter {
+    return {
+      candidateName: "L",
+      contact: { email: "a@b.com", location: "NYC" },
+      date: "June 6, 2026",
+      recipient: "Hiring Team",
+      jobTitle: "Engineer",
+      greeting: "Dear Hiring Manager,",
+      opening,
+      body: [],
+      closing: "",
+    };
+  }
+
+  it("matches across hyphen vs space", () => {
+    const r = coverLetterCoverage(
+      job({ softSkills: ["Problem-solving"] }),
+      withProse("I enjoy problem solving every day."),
+    );
+    expect(r.covered).toEqual(["Problem-solving"]);
+  });
+
+  it("matches singular vs plural", () => {
+    const r = coverLetterCoverage(
+      job({ atsKeywords: ["Ecommerce platforms"] }),
+      withProse("I built an ecommerce platform."),
+    );
+    expect(r.covered).toEqual(["Ecommerce platforms"]);
+  });
+
+  it("matches aliases (REST <-> REST APIs)", () => {
+    const r = coverLetterCoverage(
+      job({ atsKeywords: ["REST"] }),
+      withProse("I designed REST APIs for the backend."),
+    );
+    expect(r.covered).toEqual(["REST"]);
+  });
+
+  it("matches multi-word keywords regardless of word order", () => {
+    const r = coverLetterCoverage(
+      job({ hardSkills: ["Algorithm optimization"] }),
+      withProse("I focused on optimization of the core algorithm."),
+    );
+    expect(r.covered).toEqual(["Algorithm optimization"]);
+  });
+
+  it("still requires whole words (no substring matches)", () => {
+    const r = coverLetterCoverage(
+      job({ atsKeywords: ["AI"] }),
+      withProse("I gained traction and remained patient."),
+    );
+    expect(r.missing).toEqual(["AI"]);
+    expect(r.covered).toEqual([]);
+  });
+});
