@@ -115,7 +115,7 @@ describe("POST /api/generate-cover-letter — coverage retry", () => {
     const json = await res.json();
     expect((callWorkersAI as any).mock.calls).toHaveLength(2);
     expect(json.coverLetter.body).toEqual(highDraft.body);
-    expect(json.coverage.coverageScore).toBeGreaterThan(50);
+    expect(json.coverage.coverageScore).toBe(100); // highDraft covers all 9 keywords
   });
 
   it("does not retry when the first draft already meets target", async () => {
