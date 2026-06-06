@@ -1,5 +1,7 @@
 import type { Profile } from "@/types/profile";
 import type { JobAnalysis } from "@/types/job";
+import type { CoverLetterContent } from "@/types/coverLetter";
+import { normalizeKeyword } from "@/lib/matching/normalizeKeyword";
 
 export const ANALYZE_JOB_SYSTEM = `You extract structured job requirements from a job description.
 Return ONLY valid JSON matching the provided schema. Do not explain.
@@ -71,18 +73,25 @@ FIXED master record. You MUST NOT invent or alter any of them. Only claim
 experience and abilities truthfully supported by the candidate's real profile
 (their experience, skills, and accepted gap keywords).
 
-Write a concise, professional cover letter in FIRST PERSON ("I"), 250 words or
-fewer, as four JSON fields:
+Write a focused, professional cover letter in FIRST PERSON ("I"), about 300-350
+words, as four JSON fields:
 1. greeting — a salutation. Use "Dear Hiring Manager," unless a better generic
    salutation fits. Never invent a person's name.
-2. opening — one short paragraph naming the target role and why the candidate is
-   a strong fit, leading with their strongest job-relevant qualification.
-3. body — 1 to 3 short paragraphs. EXPLICITLY connect the candidate's REAL
-   experience and projects to the job's responsibilities and required skills.
-   Weave the job's technologies and atsKeywords in naturally where they are
-   genuinely supported by the candidate's background.
+2. opening — one short paragraph naming the target role and leading with the
+   candidate's single strongest job-relevant qualification.
+3. body — 2 to 3 short paragraphs that EXPLICITLY connect the candidate's REAL
+   experience, projects, and skills to the job's responsibilities and required
+   skills. Cover SEVERAL distinct strengths from the candidate's background
+   (e.g. backend and REST APIs, database design and SQL optimization,
+   full-stack delivery, automation, problem solving, and Agile collaboration /
+   code review) — do NOT build the whole letter around one technology.
 4. closing — one short paragraph with a courteous call to action. Do NOT sign
    off with a name; the application appends the signature.
+
+COVERAGE: You are given "keywordsToWeave", the terms this job is scanned for.
+Incorporate as MANY of them as the candidate's real background genuinely
+supports, using each term's own wording, distributed naturally across the
+letter. Never force a keyword the candidate cannot truthfully back up.
 
 Accepted gap keywords may be mentioned as genuine interest or current learning,
 but NEVER as a past achievement or as something already delivered.
@@ -91,22 +100,57 @@ Avoid clichés: "team player", "results-driven", "go-getter", "synergy",
 "detail-oriented", "self-starter", "rockstar", "ninja", "guru", "hard worker",
 "think outside the box".`;
 
+// Dedupe keyword sources by normalized form, preserving the first spelling.
+function dedupeKeywords(lists: string[][]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const kw of lists.flat()) {
+    const trimmed = kw?.trim();
+    if (!trimmed) continue;
+    const norm = normalizeKeyword(trimmed);
+    if (!norm || seen.has(norm)) continue;
+    seen.add(norm);
+    out.push(trimmed);
+  }
+  return out;
+}
+
 export function coverLetterUser(args: {
   profile: Profile;
   jobAnalysis: JobAnalysis;
   matchedKeywords: string[];
   acceptedGapKeywords: string[];
+  // Present only on a coverage retry:
+  priorContent?: CoverLetterContent;
+  mustCover?: string[];
 }): string {
-  return JSON.stringify(
-    {
-      candidateProfile: args.profile,
-      jobAnalysis: args.jobAnalysis,
-      matchedKeywords: args.matchedKeywords,
-      acceptedGapKeywords: args.acceptedGapKeywords,
-      instruction:
-        "Write greeting, opening, body, and closing for a cover letter that maps the candidate's real experience to this job's responsibilities and naturally includes the job's keywords the candidate genuinely has. Do not invent facts.",
-    },
-    null,
-    2,
-  );
+  const keywordsToWeave = dedupeKeywords([
+    args.matchedKeywords,
+    args.acceptedGapKeywords,
+    args.jobAnalysis.technologies,
+    args.jobAnalysis.hardSkills,
+    args.jobAnalysis.softSkills,
+    args.jobAnalysis.atsKeywords,
+  ]);
+
+  const isRetry =
+    !!args.priorContent && !!args.mustCover && args.mustCover.length > 0;
+
+  const payload: Record<string, unknown> = {
+    candidateProfile: args.profile,
+    jobAnalysis: args.jobAnalysis,
+    matchedKeywords: args.matchedKeywords,
+    acceptedGapKeywords: args.acceptedGapKeywords,
+    keywordsToWeave,
+    instruction: isRetry
+      ? "Revise previousDraft into an improved cover letter. Keep every keyword it already covers, and additionally weave in the mustCover keywords wherever the candidate's real background genuinely supports them, using each term's own wording. Keep it first person, about 300-350 words, truthful, and free of clichés. Return the full greeting, opening, body, and closing."
+      : "Write greeting, opening, body (2-3 paragraphs), and closing for a first-person cover letter of about 300-350 words. Map the candidate's real experience and skills to this job's responsibilities and incorporate as many keywordsToWeave as the candidate's background genuinely supports, using each term's own wording and spreading the evidence across several different strengths. Do not invent facts and do not center the whole letter on one technology.",
+  };
+
+  if (isRetry) {
+    payload.previousDraft = args.priorContent;
+    payload.mustCover = args.mustCover;
+  }
+
+  return JSON.stringify(payload, null, 2);
 }
