@@ -73,3 +73,66 @@ describe("POST /api/generate-cover-letter", () => {
     expect(res.status).toBe(405);
   });
 });
+
+describe("POST /api/generate-cover-letter — coverage retry", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  const job = {
+    jobTitle: "Full-Stack Engineer",
+    companyName: "Acme Corp",
+    technologies: ["React", "TypeScript", "Node.js"],
+    hardSkills: ["REST APIs", "unit testing"],
+    softSkills: ["communication", "collaboration"],
+    responsibilities: [],
+    preferredQualifications: [],
+    atsKeywords: ["Automation", "Agile"],
+  };
+  const reqBody = { jobAnalysis: job, matchedKeywords: [], acceptedGapKeywords: [] };
+
+  // Covers only React + REST APIs -> 2/9 = 22% (< 70 target).
+  const lowDraft = {
+    greeting: "Dear Hiring Manager,",
+    opening: "I build with React.",
+    body: ["I design REST APIs."],
+    closing: "Thanks.",
+  };
+  // Covers all 9 keywords -> 100%.
+  const highDraft = {
+    greeting: "Dear Hiring Manager,",
+    opening: "I build with React, TypeScript, and Node.js.",
+    body: [
+      "I design REST APIs and practice unit testing, with strong communication and collaboration.",
+      "I also focus on Automation and work in an Agile team.",
+    ],
+    closing: "Thanks.",
+  };
+
+  it("retries once and keeps the higher-coverage draft", async () => {
+    (callWorkersAI as any)
+      .mockResolvedValueOnce(lowDraft)
+      .mockResolvedValueOnce(highDraft);
+    const res = await POST(req(reqBody));
+    const json = await res.json();
+    expect((callWorkersAI as any).mock.calls).toHaveLength(2);
+    expect(json.coverLetter.body).toEqual(highDraft.body);
+    expect(json.coverage.coverageScore).toBeGreaterThan(50);
+  });
+
+  it("does not retry when the first draft already meets target", async () => {
+    (callWorkersAI as any).mockResolvedValueOnce(highDraft);
+    const res = await POST(req(reqBody));
+    const json = await res.json();
+    expect((callWorkersAI as any).mock.calls).toHaveLength(1);
+    expect(json.coverLetter.body).toEqual(highDraft.body);
+  });
+
+  it("keeps the first draft if the retry fails", async () => {
+    (callWorkersAI as any)
+      .mockResolvedValueOnce(lowDraft)
+      .mockRejectedValueOnce(new Error("model down"));
+    const res = await POST(req(reqBody));
+    const json = await res.json();
+    expect(res.status).toBe(200);
+    expect(json.coverLetter.body).toEqual(lowDraft.body);
+  });
+});

@@ -9,9 +9,32 @@ import { formatLetterDate } from "@/lib/coverLetter/formatLetterDate";
 import { buildRecipient } from "@/lib/coverLetter/buildRecipient";
 import { leonardoProfile } from "@/data/leonardo-profile";
 import type { JobAnalysis } from "@/types/job";
-import type { CoverLetter } from "@/types/coverLetter";
+import type { CoverLetter, CoverLetterContent } from "@/types/coverLetter";
 
 export const maxDuration = 300;
+
+// Below this coverage score we spend ONE extra AI call trying to weave in the
+// keywords the first draft missed. One retry only — bounds latency and cost.
+const COVERAGE_TARGET = 70;
+
+// Reassemble the letter: model prose + authoritative facts copied verbatim.
+// The model never controls identity, contact, company, or the job title.
+function assembleLetter(
+  content: CoverLetterContent,
+  jobAnalysis: JobAnalysis,
+): CoverLetter {
+  return {
+    candidateName: leonardoProfile.name,
+    contact: leonardoProfile.contact,
+    date: formatLetterDate(new Date()),
+    recipient: buildRecipient(jobAnalysis.companyName),
+    jobTitle: jobAnalysis.jobTitle,
+    greeting: content.greeting,
+    opening: content.opening,
+    body: content.body,
+    closing: content.closing,
+  };
+}
 
 export async function POST(request: Request) {
   let body: {
@@ -29,6 +52,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing jobAnalysis" }, { status: 400 });
   }
   const jobAnalysis = body.jobAnalysis;
+  const matchedKeywords = body.matchedKeywords ?? [];
+  const acceptedGapKeywords = body.acceptedGapKeywords ?? [];
 
   try {
     const raw = await callWorkersAI<unknown>({
@@ -36,29 +61,45 @@ export async function POST(request: Request) {
       user: coverLetterUser({
         profile: leonardoProfile,
         jobAnalysis,
-        matchedKeywords: body.matchedKeywords ?? [],
-        acceptedGapKeywords: body.acceptedGapKeywords ?? [],
+        matchedKeywords,
+        acceptedGapKeywords,
       }),
       jsonSchema: coverLetterContentJsonSchema,
     });
 
     const content = coverLetterContentSchema.parse(raw);
+    let coverLetter = assembleLetter(content, jobAnalysis);
+    let coverage = coverLetterCoverage(jobAnalysis, coverLetter);
 
-    // Reassemble the letter: model prose + authoritative facts copied verbatim.
-    // The model never controls identity, contact, company, or the job title.
-    const coverLetter: CoverLetter = {
-      candidateName: leonardoProfile.name,
-      contact: leonardoProfile.contact,
-      date: formatLetterDate(new Date()),
-      recipient: buildRecipient(jobAnalysis.companyName),
-      jobTitle: jobAnalysis.jobTitle,
-      greeting: content.greeting,
-      opening: content.opening,
-      body: content.body,
-      closing: content.closing,
-    };
+    // One coverage-driven retry: feed the missing keywords + prior draft back
+    // to the model, and keep whichever draft scores higher. Any failure here
+    // silently falls back to the first draft.
+    if (coverage.coverageScore < COVERAGE_TARGET && coverage.missing.length > 0) {
+      try {
+        const raw2 = await callWorkersAI<unknown>({
+          system: COVER_LETTER_SYSTEM,
+          user: coverLetterUser({
+            profile: leonardoProfile,
+            jobAnalysis,
+            matchedKeywords,
+            acceptedGapKeywords,
+            priorContent: content,
+            mustCover: coverage.missing,
+          }),
+          jsonSchema: coverLetterContentJsonSchema,
+        });
+        const content2 = coverLetterContentSchema.parse(raw2);
+        const letter2 = assembleLetter(content2, jobAnalysis);
+        const coverage2 = coverLetterCoverage(jobAnalysis, letter2);
+        if (coverage2.coverageScore > coverage.coverageScore) {
+          coverLetter = letter2;
+          coverage = coverage2;
+        }
+      } catch {
+        // Keep the first draft if the retry fails.
+      }
+    }
 
-    const coverage = coverLetterCoverage(jobAnalysis, coverLetter);
     return NextResponse.json({ coverLetter, coverage });
   } catch (err) {
     if (err instanceof ZodError) {

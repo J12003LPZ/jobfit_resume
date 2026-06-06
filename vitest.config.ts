@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    clearMocks: true,
     setupFiles: ["./vitest.setup.ts"],
     // Git worktrees live under .claude/worktrees and carry their own test files
     // whose "@/" alias would resolve here; keep them out of the main run.
