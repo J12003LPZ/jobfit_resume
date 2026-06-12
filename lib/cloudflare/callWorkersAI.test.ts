@@ -25,7 +25,7 @@ describe("callWorkersAI", () => {
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe(
-      "https://api.cloudflare.com/client/v4/accounts/acct-123/ai/run/@cf/meta/llama-3.1-8b-instruct"
+      "https://api.cloudflare.com/client/v4/accounts/acct-123/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast"
     );
     expect(init.headers.Authorization).toBe("Bearer test-token");
     expect(out).toEqual(payload);

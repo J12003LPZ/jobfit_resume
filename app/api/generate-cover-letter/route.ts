@@ -15,7 +15,7 @@ export const maxDuration = 300;
 
 // Below this coverage score we spend ONE extra AI call trying to weave in the
 // keywords the first draft missed. One retry only — bounds latency and cost.
-const COVERAGE_TARGET = 70;
+const COVERAGE_TARGET = 80;
 
 // Reassemble the letter: model prose + authoritative facts copied verbatim.
 // The model never controls identity, contact, company, or the job title.

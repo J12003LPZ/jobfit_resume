@@ -5,7 +5,9 @@ type CallArgs = {
   maxTokens?: number;
 };
 
-const DEFAULT_MODEL = "@cf/meta/llama-3.1-8b-instruct";
+// 70B writes dramatically better prose than 8B for the same JSON-mode API.
+// Override with CLOUDFLARE_MODEL if this model is unavailable on the account.
+const DEFAULT_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 export async function callWorkersAI<T = unknown>({
   system,

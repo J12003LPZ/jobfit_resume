@@ -85,8 +85,10 @@ Write a focused, professional cover letter in FIRST PERSON ("I"), about 300-350
 words, as four JSON fields:
 1. greeting — a salutation. Use "Dear Hiring Manager," unless a better generic
    salutation fits. Never invent a person's name.
-2. opening — one short paragraph naming the target role and leading with the
-   candidate's single strongest job-relevant qualification.
+2. opening — one short paragraph naming the target role (and the company by
+   name when companyName is provided) and leading with the candidate's single
+   strongest job-relevant qualification. Do not open with "I am writing to
+   apply" — open with the qualification itself.
 3. body — 2 to 3 short paragraphs that EXPLICITLY connect the candidate's REAL
    experience, projects, and skills to the job's responsibilities and required
    skills. Cover SEVERAL distinct strengths from the candidate's background
@@ -100,6 +102,12 @@ COVERAGE: You are given "keywordsToWeave", the terms this job is scanned for.
 Incorporate as MANY of them as the candidate's real background genuinely
 supports, using each term's own wording, distributed naturally across the
 letter. Never force a keyword the candidate cannot truthfully back up.
+
+STYLE: Keep paragraphs to at most 4 sentences. Vary sentence length and
+sentence openings — no two consecutive sentences may start with "I". Where the
+candidate's profile contains a concrete number (users, requests, percentages,
+team size), prefer citing it over a vague claim. Plain, confident, specific
+prose; no exclamation marks.
 
 Accepted gap keywords may be mentioned as genuine interest or current learning,
 but NEVER as a past achievement or as something already delivered.
