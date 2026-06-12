@@ -51,6 +51,7 @@ describe("measureResume / fitResumeScale", () => {
     const fat = bloatedProfile();
     const scale = fitResumeScale(doc, fat);
     expect(scale).toBeLessThan(1);
+    expect(scale).toBeGreaterThan(0.3);
     expect(measureResume(doc, fat, scale)).toBeLessThanOrEqual(RESUME_PAGE_LIMIT);
   });
 });
