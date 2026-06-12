@@ -5,6 +5,7 @@ import { ANALYZE_JOB_SYSTEM, analyzeJobUser } from "@/lib/cloudflare/prompts";
 import { jobAnalysisJsonSchema } from "@/lib/cloudflare/jsonSchemas";
 import { jobAnalysisSchema } from "@/schemas/job-analysis.schema";
 import { analyzeGaps } from "@/lib/matching/analyzeGaps";
+import { cleanJobAnalysis } from "@/lib/matching/cleanJobAnalysis";
 import { fetchJobText } from "@/lib/jobs/fetchJobText";
 import { profileKeywords } from "@/data/leonardo-profile";
 import type { JobAnalysis } from "@/types/job";
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
       user: analyzeJobUser(jobDescription),
       jsonSchema: jobAnalysisJsonSchema,
     });
-    const analysis = jobAnalysisSchema.parse(raw) as JobAnalysis;
+    const analysis = cleanJobAnalysis(jobAnalysisSchema.parse(raw) as JobAnalysis);
     const gap = analyzeGaps(analysis, profileKeywords());
     return NextResponse.json({ analysis, gap });
   } catch (err) {

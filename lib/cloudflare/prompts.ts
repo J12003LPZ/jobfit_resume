@@ -10,12 +10,20 @@ Split items into: technologies (languages/frameworks/tools), hardSkills (technic
 softSkills (interpersonal), responsibilities (duties), preferredQualifications (nice-to-haves),
 and atsKeywords (the most important terms an ATS would scan for).
 
-atsKeywords MUST be short, scannable noun phrases (1-4 words), e.g. "React",
-"REST APIs", "unit testing", "Agile". NEVER put a full sentence or a verbatim
-responsibility line in atsKeywords — distill it to the underlying skill/term
-instead (e.g. "Collaborate with team members to design features" -> "collaboration",
-"feature design"). Keep responsibilities as the full duty sentences; keep
-atsKeywords terse.`;
+Rules:
+- Each concrete skill appears in exactly ONE of technologies / hardSkills /
+  softSkills / atsKeywords. Never repeat the same term across those lists.
+- atsKeywords MUST be short, scannable noun phrases (1-4 words), e.g. "React",
+  "REST APIs", "unit testing", "Agile". NEVER put a full sentence or a verbatim
+  responsibility line in atsKeywords — distill it to the underlying skill/term
+  instead (e.g. "Collaborate with team members to design features" ->
+  "collaboration", "feature design").
+- Prefer the job posting's own spelling for each term.
+- Mark a skill required (technologies/hardSkills) only when the posting requires
+  it; if it appears under "nice to have" / "preferred" / "bonus", put the full
+  line in preferredQualifications and the distilled term in atsKeywords.
+- Keep responsibilities as the full duty sentences.
+- jobTitle is the exact posted title; companyName only if explicitly stated.`;
 
 export function analyzeJobUser(jobDescription: string): string {
   return `Job description:\n\n${jobDescription}`;
