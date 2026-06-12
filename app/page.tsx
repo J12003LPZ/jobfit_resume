@@ -219,12 +219,12 @@ export default function Page() {
   return (
     <main className="min-h-full">
       <Header />
-      <div className="mx-auto max-w-[1440px] space-y-8 px-6 py-10">
+      <div className="mx-auto max-w-[1440px] space-y-8 px-4 py-6 sm:px-6 sm:py-10">
         <section className="animate-rise max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-primary)]">
             Beat the keyword filter
           </p>
-          <h2 className="mt-3 font-display text-4xl font-semibold leading-[1.08] tracking-[-0.02em] text-[var(--color-on-surface)] sm:text-5xl">
+          <h2 className="mt-3 font-display text-3xl font-semibold leading-[1.08] tracking-[-0.02em] text-[var(--color-on-surface)] sm:text-4xl lg:text-5xl">
             Tailor your résumé to the{" "}
             <span className="italic text-[var(--color-primary)]">job</span>, not
             the other way around.
@@ -276,11 +276,11 @@ export default function Page() {
               />
             )}
             {analysis && gap && !analyzing && (
-              <div className="flex flex-wrap gap-2">
-                <Button variant="primary" onClick={generate} disabled={generating}>
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <Button variant="primary" className="w-full sm:w-auto" onClick={generate} disabled={generating}>
                   {generating ? "Generating…" : "Generate Resume"}
                 </Button>
-                <Button variant="secondary" onClick={generateCoverLetter} disabled={generatingCover}>
+                <Button variant="secondary" className="w-full sm:w-auto" onClick={generateCoverLetter} disabled={generatingCover}>
                   {generatingCover ? "Generating…" : "Generate Cover Letter"}
                 </Button>
               </div>
@@ -293,7 +293,7 @@ export default function Page() {
         {resume && validation && (
           <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <Card className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Generated Resume</CardTitle>
                 <ExportButtons
                   resume={resume}
@@ -317,7 +317,7 @@ export default function Page() {
         {coverLetter && coverage && (
           <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
             <Card className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Cover Letter</CardTitle>
                 <CoverLetterExportButtons
                   letter={coverLetter}

@@ -1,6 +1,7 @@
 import type { JobAnalysis } from "@/types/job";
 import type { CoverLetter } from "@/types/coverLetter";
 import { jobKeywordList } from "./jobKeywords";
+import { normalizeKeyword } from "./normalizeKeyword";
 
 export type CoverLetterCoverage = {
   covered: string[];
@@ -12,10 +13,71 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// Literal, case-insensitive, whole-word presence of each job keyword in the
-// letter prose (opening + body + closing). The greeting is excluded — it is a
-// fixed salutation, not a place to score keywords against. Responsibilities are
-// never part of jobKeywordList, so they cannot affect the result.
+// Connector words that need not be present for a multi-word keyword to count.
+const STOPWORDS = new Set([
+  "and", "or", "of", "the", "a", "an", "to", "with", "for", "in", "on",
+]);
+
+// Regex fragment for one token, tolerant of simple plural/singular:
+// a trailing "s" on the keyword token is optional, and the prose may add one
+// ("platform" <-> "platforms", "api" <-> "apis"). Only stem words longer than
+// 3 chars so short tokens like "css"/"AI" are left intact.
+function tokenPattern(token: string): string {
+  const stem =
+    token.length > 3 && token.toLowerCase().endsWith("s")
+      ? token.slice(0, -1)
+      : token;
+  return `${escapeRegExp(stem)}s?`;
+}
+
+function splitTokens(form: string): string[] {
+  return form.split(/[\s\-/]+/).filter(Boolean);
+}
+
+// Candidate spellings for a keyword: the raw form plus the alias-normalized form
+// (so "REST"/"RESTful" both reach "rest apis" and either spelling in the letter
+// counts). Matching is case-insensitive, so casing of these forms is irrelevant.
+function surfaceForms(keyword: string): string[] {
+  const forms = new Set<string>();
+  const raw = keyword.trim();
+  if (raw) forms.add(raw);
+  const norm = normalizeKeyword(keyword);
+  if (norm) forms.add(norm);
+  return [...forms];
+}
+
+// A surface form is present when its words appear contiguously (separators
+// flexible: space / hyphen / slash) OR — for multi-word forms — when all of its
+// significant words appear anywhere in the prose, in any order. Whole-word
+// boundaries are always required, so "AI" never matches inside "training".
+function formPresent(form: string, prose: string): boolean {
+  const tokens = splitTokens(form);
+  if (tokens.length === 0) return false;
+
+  const phrase = new RegExp(
+    `\\b${tokens.map(tokenPattern).join("[\\s\\-/]+")}\\b`,
+    "i",
+  );
+  if (phrase.test(prose)) return true;
+
+  const significant = tokens.filter((t) => !STOPWORDS.has(t.toLowerCase()));
+  if (significant.length >= 2) {
+    return significant.every((t) =>
+      new RegExp(`\\b${tokenPattern(t)}\\b`, "i").test(prose),
+    );
+  }
+  return false;
+}
+
+function isCovered(keyword: string, prose: string): boolean {
+  return surfaceForms(keyword).some((f) => formPresent(f, prose));
+}
+
+// Generous, case-insensitive presence of each job keyword in the letter prose
+// (opening + body + closing). Tolerates hyphen/space, plural/singular, aliases,
+// and word order so a genuinely-present concept is not scored as missing. The
+// greeting is excluded (fixed salutation); responsibilities are never in
+// jobKeywordList, so they cannot affect the result.
 export function coverLetterCoverage(
   job: JobAnalysis,
   letter: CoverLetter,
@@ -35,8 +97,7 @@ export function coverLetterCoverage(
   const covered: string[] = [];
   const missing: string[] = [];
   for (const kw of universe) {
-    const re = new RegExp(`\\b${escapeRegExp(kw)}\\b`, "i");
-    (re.test(prose) ? covered : missing).push(kw);
+    (isCovered(kw, prose) ? covered : missing).push(kw);
   }
 
   const coverageScore =

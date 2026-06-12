@@ -1,7 +1,7 @@
 export function Header() {
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--color-outline)] bg-[var(--color-canvas)]/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-6 py-4">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center gap-3.5">
           <span
             aria-hidden
@@ -20,7 +20,7 @@ export function Header() {
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--color-outline-strong)] bg-[var(--color-card)] px-3.5 py-1.5 text-xs font-medium text-[var(--color-on-surface-variant)]">
+        <span className="hidden sm:inline-flex items-center gap-2 rounded-full border border-[var(--color-outline-strong)] bg-[var(--color-card)] px-3.5 py-1.5 text-xs font-medium text-[var(--color-on-surface-variant)]">
           <span className="size-1.5 rounded-full bg-[var(--color-emerald)]" />
           No login required
         </span>
